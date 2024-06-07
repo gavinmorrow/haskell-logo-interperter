@@ -1,21 +1,28 @@
 module Main (main) where
 
 import Ast
-import Text.Read (readMaybe)
-import Turtle
+import Data.List (uncons)
 
 main :: IO ()
-main = getLine >>= (print . commands)
+main = getContents >>= (print . commands)
 
-commands :: String -> Maybe [Command]
-commands = parse . words
+commands :: String -> [Maybe Command]
+commands = fmap (parseLine . words) . lines
 
-parse :: [String] -> Maybe [Command]
-parse [] = Nothing
-parse ("pu" : xs) = parse xs >>= \xs' -> Just $ Pu : xs'
-parse ("pd" : xs) = parse xs >>= \xs' -> Just $ Pd : xs'
-parse (c : x : xs) = do
-  x' <- readMaybe x
-  xs' <- parse xs
-  return (cmd1 c x' : xs')
-parse _ = error "Unknown"
+data StackElem = C Command | N Number
+
+-- TODO: use nonempty for line
+parseLine :: [String] -> Maybe Command
+parseLine l = case fmap fst $ uncons $ foldr f [] l of
+  Just (C c) -> Just c
+  Just (N n) -> error $ "Number:" ++ show n
+  Nothing -> error "empty line"
+  where
+    f :: String -> [StackElem] -> [StackElem]
+    f "fd" (N x : xs) = C (Fd x) : xs
+    f "bk" (N x : xs) = C (Bk x) : xs
+    f "lt" (N x : xs) = C (Lt x) : xs
+    f "rt" (N x : xs) = C (Rt x) : xs
+    f "pu" xs = C Pu : xs
+    f "pd" xs = C Pd : xs
+    f n xs = N (Number $ read n) : xs

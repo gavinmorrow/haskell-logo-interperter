@@ -1,6 +1,6 @@
 module Turtle (Turtle) where
 
-import Ast (Logo)
+import Ast (Command)
 
 class Turtle a where
-  run :: Logo -> a
+  run :: [Command] -> a
