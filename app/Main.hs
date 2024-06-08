@@ -2,21 +2,23 @@ module Main (main) where
 
 import Ast
 import Data.List (uncons)
+import Graphics.Gloss
 
 main :: IO ()
-main = getContents >>= (print . commands)
+main = do
+  stdin <- getContents
+  let cs = commands stdin
+  display (InWindow "Turtle" (500, 1000) (0, 0)) white (Text $ show cs)
 
-commands :: String -> [Maybe Command]
-commands = fmap (parseLine . words) . lines
+commands :: String -> Maybe [Command]
+commands = mapM (parseLine . words) . filter (/= "") . lines
 
 data StackElem = C Command | N Number
 
--- TODO: use nonempty for line
 parseLine :: [String] -> Maybe Command
-parseLine l = case fmap fst $ uncons $ foldr f [] l of
-  Just (C c) -> Just c
-  Just (N n) -> error $ "Number:" ++ show n
-  Nothing -> error "empty line"
+parseLine l = do
+  C c <- fmap fst $ uncons $ foldr f [] l
+  return c
   where
     f :: String -> [StackElem] -> [StackElem]
     f "fd" (N x : xs) = C (Fd x) : xs
